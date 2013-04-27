@@ -12,6 +12,15 @@ const int led2 = 11;
 const int push1 = 12;
 const int push2 = 13;
 
+int btn1State;
+int btn2State;
+boolean beep;
+boolean boom;
+boolean armed;
+int timer;
+int ticker;
+long randomNumber;
+
 void digit0 () {
 
   digitalWrite(disp_a, HIGH);
@@ -126,7 +135,7 @@ void digit9 () {
 };
 
 
-void showdigit (int digit)
+void showDigit (int digit)
 
 {
 
@@ -181,30 +190,38 @@ void showdigit (int digit)
 };
 
 
-void beepon(){
+void beepOn(){
+  beep = true;
   digitalWrite(buzz,HIGH);
   digitalWrite(led1,HIGH);
 };
 
-void beepoff(){
+void beepOff(){
+  beep = false;
   digitalWrite(buzz,LOW);
   digitalWrite(led1,LOW);
 };
 
-void boomon(){
+void boomOn(){
+  printTerrWin();
+  boom = true;
   digitalWrite(buzz,HIGH);
   digitalWrite(led2,HIGH);
 };
 
-void boomoff(){
+void boomOff(){
+  boom = false;
   digitalWrite(buzz,LOW);
   digitalWrite(led2,LOW);
 };
 
-boolean beep = false;
-boolean boom = false;
-int timer;
-int ticker;
+void resetTicker(){
+  ticker = 0;
+}
+
+void resetTimer(){
+  timer = 9;
+}
 
 void setup()
 
@@ -226,40 +243,129 @@ void setup()
 
   timer = 9;
   ticker = 0;
+  armed = true;
+  beep = false;
+  boom = false;
+  btn1State = 0;
+  btn2State = 0;
+
+  Serial.begin(9600);
+
+  Serial.print("Bomb has been planted!\n");
+
+  randomSeed(analogRead(0));
 };
+
+void printTerrWin(){
+  Serial.print("Terrorists win!\n");
+}
+
+void printCTWin(){
+  Serial.print("Counter terrorist, win!\n");
+}
+
+void clean(){
+  digitalWrite(disp_a, LOW);
+  digitalWrite(disp_b, LOW);
+  digitalWrite(disp_c, LOW);
+  digitalWrite(disp_d, LOW);
+  digitalWrite(disp_e, LOW);
+  digitalWrite(disp_f, LOW);
+  digitalWrite(disp_g, LOW);
+  digitalWrite(buzz, LOW);
+  digitalWrite(led2, LOW);
+}
+
+void desarm(){
+  armed = false;
+  clean();
+  digitalWrite(buzz, HIGH);
+  delay(150);
+  digitalWrite(buzz, LOW);
+}
+
+void armedState(){
+  if(boom){
+      if(ticker >= 37){
+        resetTicker();
+        resetTimer();
+        boomOff();
+      }
+    }
+    else {
+      if(timer >= 0){
+        if(ticker >= 9){
+          showDigit(timer);
+          beepOn();
+          resetTicker();
+          timer--;
+        }
+        else {
+          if(ticker >= 5 && beep){
+            beepOff();
+          }
+        } 
+      }
+      else {
+        boomOn();
+      }
+    }
+    ticker++;
+    delay(100);
+}
+
+void lap(){
+  digitalWrite(disp_a, HIGH);
+  delay(100);
+  digitalWrite(disp_a, LOW);
+  digitalWrite(disp_b, HIGH);
+  delay(100);
+  digitalWrite(disp_b, LOW);
+  digitalWrite(disp_c, HIGH);
+  delay(100);
+  digitalWrite(disp_c, LOW);
+  digitalWrite(disp_d, HIGH);
+  delay(100);
+  digitalWrite(disp_d, LOW);
+  digitalWrite(disp_e, HIGH);
+  delay(100);
+  digitalWrite(disp_e, LOW);
+  digitalWrite(disp_f, HIGH);
+  delay(100);
+  digitalWrite(disp_f, LOW);
+}
 
 void loop ()
 
 { 
+  randomNumber = random(300);
+  Serial.print(randomNumber);
+  Serial.print('\n');
+  btn1State = digitalRead(push1);
+  btn2State = digitalRead(push2);
 
-
-  if(ticker >= 5){
-    if(!beep){
-      showdigit(timer);
-      beepon();
-      beep = true;
-      if(timer <= 0){
-        if(!boom){
-          boomon();
-          boom = true;
-        }
-        else {
-          boomoff();
-          boom = false;
-          timer = 9;
-        }
-      }
-      else {
-        timer--;
-      }
+  if(randomNumber % 2 == 0){
+    if(btn1State == HIGH){
+      resetTimer();
+      desarm();
     }
-    else{
-      beepoff();
-      beep = false;
-    }
-    ticker = 0;
   }
-  ticker++;
-  delay(100);
+  else {
+    if(btn2State == HIGH){
+      resetTimer();
+      desarm();
+    }
+  }
+
+  if (armed){
+    armedState();    
+  }  
+  else {
+    lap();
+  }   
 };
+
+
+
+
 
