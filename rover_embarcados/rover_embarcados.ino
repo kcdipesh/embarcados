@@ -39,6 +39,9 @@ int cicle_delay = 100;
 
 void setup() {
   tower.attach(servo_port);
+  
+  Serial.begin(9200);
+  Serial.write(servo_port);
 
   pinMode(DRIVER_DIR1, OUTPUT);
   pinMode(DRIVER_DIR2, OUTPUT);
@@ -57,6 +60,24 @@ void setup() {
 }
 
 void loop() {
+  setFoward();
+  halt();
+  sweep();
+  delay(50);
+}
+
+void setFoward(){
+  digitalWrite(DRIVER_DIR1, HIGH);
+  digitalWrite(DRIVER_DIR2, HIGH);
+  digitalWrite(DRIVER_DIR3, HIGH);
+  digitalWrite(DRIVER_DIR4, HIGH);
+}
+
+void halt(){
+  analogWrite(DRIVER_PWM1, 0x00);
+  analogWrite(DRIVER_PWM2, 0x00);
+  analogWrite(DRIVER_PWM3, 0x00);
+  analogWrite(DRIVER_PWM4, 0x00);
 }
 
 void sweep(){
@@ -105,5 +126,7 @@ long microsecondsToCentimeters(long microseconds)
   // object we take half of the distance travelled.
   return microseconds / 29 / 2;
 }
+
+
 
 
