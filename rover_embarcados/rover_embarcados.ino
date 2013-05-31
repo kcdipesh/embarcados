@@ -9,18 +9,31 @@
 #define DRIVER_DIR3 11
 #define DRIVER_DIR4 10
 
-#define DRIVER_PWM1 24
-#define DRIVER_PWM2 26
-#define DRIVER_PWM3 28
-#define DRIVER_PWM4 30
+#define DRIVER_PWM1 7
+#define DRIVER_PWM2 6
+#define DRIVER_PWM3 5
+#define DRIVER_PWM4 4
+
+#define CH1_CURR 8
+#define CH3_CURR 9
+
+#define INTER_L 0
+#define INTER_R 1
+
+#define SIGNAL_L 22
+#define SIGNAL_R 23
+
+#define TIME_FORWARDS 5000
+#define TIME_BACKWARDS 5000
+#define TIME_TURN 2000
 
 //SONAR CONSTANTS
-#define SONAR_TRIGGER 34
-#define SONAR_ECHO    36
+#define SONAR_TRIGGER 52
+#define SONAR_ECHO    53
 #define LED_RANGE     35
 
 //INFRA-RED CONSTANTS
-#define INFRA_RED 8
+#define INFRA_RED 10
 
 //SERVO VARIABLES
 Servo tower;
@@ -37,11 +50,32 @@ int max_range = 200;
 int cicles = 0;
 int cicle_delay = 100;
 
+volatile int rotaryCount = 0;
+
+void isr()
+{
+  boolean up;
+
+  Serial.println("Interrupt");
+
+  if (digitalRead(SIGNAL_L))
+    up = digitalRead (SIGNAL_R);
+  else
+    up = !digitalRead (SIGNAL_R);
+
+  if (up)
+    rotaryCount++;
+  else
+    rotaryCount--;
+} 
+
 void setup() {
-  tower.attach(servo_port);
-  
+  tower.attach(8);
+
+  attachInterrupt(INTER_L, isr, CHANGE);
+  attachInterrupt(INTER_R, isr, CHANGE);
+
   Serial.begin(9200);
-  Serial.write(servo_port);
 
   pinMode(DRIVER_DIR1, OUTPUT);
   pinMode(DRIVER_DIR2, OUTPUT);
@@ -59,18 +93,87 @@ void setup() {
   pinMode(INFRA_RED, INPUT);
 }
 
+int phase = 0 ;
+unsigned long start;
+int time_to_change = 0;
+
 void loop() {
-  setFoward();
-  halt();
-  sweep();
-  delay(50);
+
+  start = millis();
+
+  walk(121); 
+
+  //while(millis() - start <= time_to_change){
+    //if (analogRead(CH1_CURR) > 325 || analogRead(CH3_CURR)  > 325) { // > 1.46 amps
+    //  Serial.println("Motor overload!, changing phase");
+    //  break;
+    //}
+  //} 
+
+  switch (phase++)
+  {
+  case 0:
+    goFoward();   
+    time_to_change = TIME_FORWARDS;
+    Serial.println("Moving FOWARD"); 
+    break;
+  case 1: 
+    halt();
+    goLeft();
+    time_to_change = TIME_TURN;
+    Serial.println("Turning LEFT"); 
+
+    break;
+  case 2: 
+    goBackward();
+    time_to_change = TIME_BACKWARDS;
+    Serial.println("Moving BACKWARD"); 
+
+    break;
+  case 3: 
+    goRight();
+    time_to_change = TIME_TURN;
+    Serial.println("Turning RIGHT"); 
+    phase = 0;
+    break;
+  } 
+  delay(time_to_change);
+  //delay(50);
 }
 
-void setFoward(){
-  digitalWrite(DRIVER_DIR1, HIGH);
-  digitalWrite(DRIVER_DIR2, HIGH);
-  digitalWrite(DRIVER_DIR3, HIGH);
-  digitalWrite(DRIVER_DIR4, HIGH);
+void goFoward(){
+  digitalWrite(DRIVER_DIR1, 1);
+  digitalWrite(DRIVER_DIR2, 1);
+  digitalWrite(DRIVER_DIR3, 0);
+  digitalWrite(DRIVER_DIR4, 0);
+}
+
+void goBackward(){
+  digitalWrite(DRIVER_DIR1, 0);
+  digitalWrite(DRIVER_DIR2, 0);
+  digitalWrite(DRIVER_DIR3, 1);
+  digitalWrite(DRIVER_DIR4, 1);
+}
+
+void goRight(){
+  digitalWrite(DRIVER_DIR1, 1);
+  digitalWrite(DRIVER_DIR2, 0);
+  digitalWrite(DRIVER_DIR3, 0);
+  digitalWrite(DRIVER_DIR4, 1);
+}
+
+void goLeft(){
+  digitalWrite(DRIVER_DIR1, 0);
+  digitalWrite(DRIVER_DIR2, 1);
+  digitalWrite(DRIVER_DIR3, 1);
+  digitalWrite(DRIVER_DIR4, 0);
+}
+
+void walk(int power){
+  analogWrite(DRIVER_PWM1, power);
+  analogWrite(DRIVER_PWM2, power);
+  analogWrite(DRIVER_PWM3, power);
+  analogWrite(DRIVER_PWM4, power);
 }
 
 void halt(){
@@ -126,6 +229,15 @@ long microsecondsToCentimeters(long microseconds)
   // object we take half of the distance travelled.
   return microseconds / 29 / 2;
 }
+
+
+
+
+
+
+
+
+
 
 
 
