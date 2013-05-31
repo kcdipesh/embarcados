@@ -1,0 +1,13 @@
+RoverDir	KEYWORD1
+
+goFoward	KEYWORD2
+goBackward	KEYWORD2
+goRight		KEYWORD2
+goLeft		KEYWORD2
+
+RoverPower	KEYWORD1
+
+throttle	KEYWORD2
+throttleLeft	KEYWORD2
+throttleRight	KEYWORD2
+halt		KEYWORD2

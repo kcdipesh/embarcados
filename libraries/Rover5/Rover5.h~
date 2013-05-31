@@ -1,0 +1,22 @@
+/*
+  Rover.h lib created by Rogério Peixoto 2013
+  Released into the public domain.
+*/
+
+#ifndef Rover5_h
+#define Rover5_h
+
+#include "WProgram.h"
+
+class Rover5
+{
+  public:
+    Morse(int pin);
+    void dot();
+    void dash();
+  private:
+    int _pin;
+};
+
+#endif
+
