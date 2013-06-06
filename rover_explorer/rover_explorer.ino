@@ -131,21 +131,22 @@ volatile float movDist = 0;
 void setup()
 {
 	//SERIAL START
-	Serial.begin(SERIAL_BAUD_RATE);
+	#ifdef DEBUG
+		Serial.begin(SERIAL_BAUD_RATE);
+	#endif // DEBUG
 
 	//COMMUNICATIONS START
-	//TODO: por que o bluetooth não funciona no rxtx?
-	Serial.println("STARTING COMM");
+	DEBUG_PRINT("STARTING COMM")
 	//bluetooth.begin(SERIAL_BAUD_RATE);
 	bluetooth.registerFunction(onCommandReceived, 'c');
 
 	//SENSORS START
-	Serial.println("STARTING SENSORS");
+	DEBUG_PRINT("STARTING SENSORS");
 	towerServo.attach(SERVO_PWM);
 	irSensor.begin(INFRA_RED_PORT);
 
 	//MOTOR START
-	Serial.println("STARTING ENGINE");
+	DEBUG_PRINT("STARTING ENGINE");
 	attachInterrupt(INTER_L, &onInterruptLeft, CHANGE);
 	attachInterrupt(INTER_R, &onInterruptRight, CHANGE);
 	power.halt();
@@ -185,12 +186,14 @@ void loop()
 		//send data
 		sendSensorsData();
 	} else if (currTime < servoTimer) {
+
 		//move servo
 		sweepServo();
 	} else if(currTime < interruptTimer){
+
 		//calc speed - rotation - distance 
-		calcCurrentSpeed();
 		calcMovedDistance();
+		calcCurrentSpeed();
 		sendRoverData();
 	} 
 }
@@ -198,6 +201,7 @@ void loop()
 void getSensorReadings(){
 	irLastReading = irSensor.getDistanceCentimeter();
 	sonarLastReading = sonar.ping_cm();
+
 	DEBUG_PRINT("IR: ");
 	DEBUG_PRINTDEC(irLastReading);
 	DEBUG_PRINT("SONAR: ");
@@ -228,6 +232,7 @@ void onCommandReceived(byte flag, byte numOfValues){
 	int pwm = data[1];
 	power.throttle(pwm);
 
+	DEBUG_PRINT("Receiving command ");
 	DEBUG_PRINT("DIR: ");
 	DEBUG_PRINTDEC(direction);
 	DEBUG_PRINT("PWM: ");
@@ -282,20 +287,16 @@ void sendRoverData(){
 	bluetooth.send(dist);
 }
 
-double calcCurrentSpeed(){
-	int speed = rotaryCountL / lastTime - currTime
-	DEBUG_PRINT("SPEED: ");
-	DEBUG_PRINTDEC(speed);
-	return speed ;
+void calcCurrentSpeed(){
+	currSpeed = rotaryCountL / lastTime - currTime; //velocidade escalar 
 }
 
-double calcMovedDistance(){
-	int distance = rotaryCountL/4 * (2 * PI * 3); //Raio da roda 3cm
-	return distance; 
+void calcMovedDistance(){
+	movDist = rotaryCountL/4 * (2 * PI * 3); //Raio da roda 3cm
 }
 
 void onInterruptLeft(){
-	lastTime = millis();
+	lastTime = millis(); //cada interrupção é um quarto de rotação
 	rotaryCountL++;
 }
 
