@@ -1,4 +1,3 @@
-#include <SoftwareSerial.h>
 #include <Servo.h>
 #include <NewPing.h>
 
@@ -16,7 +15,6 @@
 int rangevalue[arraysize] = { 0, 0, 0, 0, 0 };
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
-//SoftwareSerial bluetooth(RX,TX);
 Servo tower;
 
 void setup() {
@@ -25,26 +23,19 @@ void setup() {
   Serial.begin(9200);
   tower.attach(SERVO_PWM);
   //bluetooth.begin(9200);
-  
 }
 
 void loop() {
   delay(100);                    
   //unsigned int us = sonar.ping_cm();
   unsigned int us = getSonar();
-
-  //if (bluetooth.available()){
-    Serial.println(us);
-    //bluetooth.print(us);
-   // bluetooth.println(" cm");
-  //}
-  //if (bluetooth.available()){
-    //int angle = bluetooth.read();
-    //if(0 < angle <= 180) {
-      tower.write(10);
-     // delay(15);
-    //}
- // }
+  Serial.println(us);  
+  
+  int ang = 0;
+  if(Serial.available()){
+	  int ang = Serial.read();
+	  tower.write(ang);
+  }
 }
 
 ///             Get Sonar Function              ///
